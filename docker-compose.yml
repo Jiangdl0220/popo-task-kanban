@@ -11,7 +11,19 @@ services:
     environment:
       - FLASK_ENV=production
       - DATA_DIR=/app/data
-      - OPENCLAW_GATEWAY_URL=http://host.docker.internal:18789
+      - OPENCLAW_GATEWAY_URL=http://172.17.0.1:18789
       - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN:-}
       - CORS_ORIGINS=*
     restart: unless-stopped
+
+# 如果 docker-compose 版本过旧，可使用以下命令直接运行：
+# docker run -d --name popo-task-kanban \
+#   -p 5151:5151 \
+#   -v /opt/popo-task-kanban/data:/app/data \
+#   -e FLASK_ENV=production \
+#   -e DATA_DIR=/app/data \
+#   -e OPENCLAW_GATEWAY_URL=http://172.17.0.1:18789 \
+#   -e OPENCLAW_GATEWAY_TOKEN=你的Token \
+#   -e CORS_ORIGINS=* \
+#   --restart unless-stopped \
+#   popo-task-kanban_kanban

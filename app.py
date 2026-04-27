@@ -735,12 +735,15 @@ def analyze():
     except Exception as e:
         return jsonify({'error': f'AI 调用失败: {str(e)}'}), 500
 
+# ─── 初始化 ────────────────────────────────────────────────────
+
+# 模块加载时初始化数据库（支持 gunicorn）
+init_db()
+migrate_from_json()
+
 # ─── 启动 ────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    # 初始化数据库并迁移旧数据
-    init_db()
-    migrate_from_json()
     port = int(os.environ.get('PORT', '5151'))
     debug = os.environ.get('FLASK_ENV') != 'production'
     print(f'✅ POPO 看板助手已启动')
