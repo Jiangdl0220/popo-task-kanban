@@ -1,0 +1,14 @@
+.git
+.gitignore
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+tasks.json
+kanban.db
+*.db
+app.log
+app.err
+*.log
+.DS_Store

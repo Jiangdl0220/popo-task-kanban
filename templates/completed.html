@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-Mission</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg', v='arc-v2') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.svg', v='arc-v2') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='shared.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        .topbar {
+            min-height: 58px;
+        }
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            position: relative;
+            display: block;
+            border-radius: 50%;
+            isolation: isolate;
+            border: 1px solid rgba(167,243,208,0.44);
+            background: radial-gradient(circle at center, rgba(110,231,183,0.2), rgba(16,185,129,0.1) 48%, transparent 72%);
+            box-shadow: 0 0 26px rgba(52,211,153,0.5);
+            animation:
+                iconPulseDone 3s cubic-bezier(0.22, 0.61, 0.36, 1) infinite,
+                iconTacticalFlashDone 9s linear infinite;
+            transition: border-color 0.22s ease, filter 0.22s ease;
+        }
+        .brand-icon::before {
+            content: "";
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+            pointer-events: none;
+            background:
+                conic-gradient(from 18deg, rgba(167,243,208,0.56), rgba(52,211,153,0.12) 25%, rgba(167,243,208,0.5) 50%, rgba(52,211,153,0.1) 75%, rgba(167,243,208,0.56)),
+                radial-gradient(circle at center, transparent 54%, rgba(52,211,153,0.24) 58%, transparent 62%);
+            opacity: 0.88;
+            mix-blend-mode: screen;
+        }
+        .brand-icon::after {
+            content: "";
+            position: absolute;
+            inset: -10px;
+            border-radius: 44% 56% 52% 48% / 46% 42% 58% 54%;
+            background:
+                radial-gradient(circle at 30% 32%, rgba(52,211,153,0.46), transparent 48%),
+                radial-gradient(circle at 68% 62%, rgba(110,231,183,0.36), transparent 52%),
+                radial-gradient(circle at 52% 48%, rgba(16,185,129,0.24), transparent 58%);
+            opacity: 0;
+            transform: scale(0.78) rotate(-8deg);
+            animation: iconPulseRingDone 3s ease-out infinite;
+            pointer-events: none;
+            z-index: -1;
+            filter: blur(0.4px);
+        }
+        .brand-icon-ring {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            border: 1px solid rgba(167,243,208,0.58);
+            box-shadow: inset 0 0 8px rgba(52,211,153,0.22), 0 0 10px rgba(52,211,153,0.3);
+        }
+        .brand-icon-ring.outer { inset: 5px; }
+        .brand-icon-ring.mid {
+            inset: 10px;
+            border-color: rgba(110,231,183,0.62);
+            opacity: 0.9;
+        }
+        .brand-icon-core {
+            position: absolute;
+            inset: 13px;
+            border-radius: 50%;
+            pointer-events: none;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.96), rgba(209,250,229,0.88) 42%, rgba(16,185,129,0.28) 76%, transparent 100%);
+            box-shadow: 0 0 14px rgba(209,250,229,0.92), 0 0 24px rgba(52,211,153,0.56);
+        }
+        .brand-icon-node {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            pointer-events: none;
+            background: rgba(236,253,245,0.96);
+            box-shadow: 0 0 8px rgba(167,243,208,0.88);
+        }
+        .brand-icon-node.n1 { left: 50%; top: 5px; transform: translateX(-50%); }
+        .brand-icon-node.n2 { right: 7px; top: 50%; transform: translateY(-50%); }
+        .brand-icon-node.n3 { left: 8px; bottom: 8px; }
+        .brand-icon:hover,
+        .brand-icon:focus-visible {
+            border-color: rgba(251,191,36,0.7);
+            filter: saturate(1.2) brightness(1.08);
+            animation: iconPulseDoneAlert 1.3s ease-in-out infinite;
+        }
+        .brand-icon:hover::after,
+        .brand-icon:focus-visible::after {
+            background:
+                radial-gradient(circle at 30% 32%, rgba(248,113,113,0.54), transparent 48%),
+                radial-gradient(circle at 68% 62%, rgba(252,211,77,0.42), transparent 52%),
+                radial-gradient(circle at 52% 48%, rgba(251,191,36,0.28), transparent 58%);
+            animation: iconPulseRingDoneAlert 1.3s ease-out infinite;
+        }
+        @keyframes iconPulseDone {
+            0%, 100% {
+                transform: translateZ(0) scale(1);
+                box-shadow: 0 0 16px rgba(52,211,153,0.36), 0 0 0 0 rgba(16,185,129,0.18);
+            }
+            40% {
+                transform: translateZ(0) scale(1.045);
+                box-shadow: 0 0 30px rgba(52,211,153,0.7), 0 0 42px rgba(16,185,129,0.4);
+            }
+            65% {
+                transform: translateZ(0) scale(1.01);
+                box-shadow: 0 0 22px rgba(52,211,153,0.56), 0 0 26px rgba(16,185,129,0.32);
+            }
+        }
+        @keyframes iconPulseRingDone {
+            0% {
+                opacity: 0;
+                transform: scale(0.78) rotate(-8deg);
+                border-radius: 44% 56% 52% 48% / 46% 42% 58% 54%;
+            }
+            18% {
+                opacity: 0.62;
+            }
+            52% {
+                opacity: 0.3;
+                border-radius: 58% 42% 47% 53% / 40% 57% 43% 60%;
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.36) rotate(12deg);
+                border-radius: 49% 51% 60% 40% / 56% 44% 50% 50%;
+            }
+        }
+        @keyframes iconTacticalFlashDone {
+            0%, 90%, 100% {
+                border-color: rgba(167,243,208,0.38);
+            }
+            91% {
+                border-color: rgba(248,113,113,0.96);
+                box-shadow: 0 0 30px rgba(239,68,68,0.7), 0 0 58px rgba(248,113,113,0.54);
+            }
+            92% {
+                border-color: rgba(167,243,208,0.38);
+                box-shadow: 0 0 14px rgba(52,211,153,0.44), 0 0 16px rgba(16,185,129,0.26);
+            }
+            94% {
+                border-color: rgba(248,113,113,0.92);
+                box-shadow: 0 0 26px rgba(239,68,68,0.64), 0 0 50px rgba(248,113,113,0.48);
+            }
+            95% {
+                border-color: rgba(252,165,165,0.86);
+                box-shadow: 0 0 20px rgba(239,68,68,0.5), 0 0 36px rgba(248,113,113,0.36);
+            }
+        }
+        @keyframes iconPulseDoneAlert {
+            0%, 100% {
+                transform: translateZ(0) scale(1);
+                box-shadow: 0 0 18px rgba(52,211,153,0.52), 0 0 16px rgba(251,191,36,0.34);
+            }
+            50% {
+                transform: translateZ(0) scale(1.08);
+                box-shadow: 0 0 34px rgba(52,211,153,0.82), 0 0 54px rgba(245,158,11,0.5);
+            }
+        }
+        @keyframes iconPulseRingDoneAlert {
+            0% {
+                opacity: 0;
+                transform: scale(0.74) rotate(-10deg);
+                border-radius: 42% 58% 54% 46% / 45% 40% 60% 55%;
+            }
+            20% {
+                opacity: 0.82;
+            }
+            55% {
+                opacity: 0.38;
+                border-radius: 61% 39% 46% 54% / 41% 56% 44% 59%;
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.46) rotate(14deg);
+                border-radius: 50% 50% 62% 38% / 58% 42% 48% 52%;
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .brand-icon,
+            .brand-icon::after,
+            .brand-icon:hover,
+            .brand-icon:focus-visible,
+            .brand-icon:hover::after,
+            .brand-icon:focus-visible::after {
+                animation: none;
+            }
+        }
+        .topbar-copy h1 {
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .topbar-copy p {
+            font-size: 11px;
+            color: rgba(165,180,252,0.68);
+            margin-top: 1px;
+        }
+        .btn-reopen {
+            border-color: rgba(52,211,153,0.22);
+            color: var(--done-soft);
+            background: rgba(18,50,38,0.66);
+        }
+        .btn-reopen:hover { background: rgba(24,68,50,0.85); border-color: rgba(52,211,153,0.34); color: #d1fae5; }
+        .filterbar {
+            padding: 10px 40px;
+            position: sticky;
+            top: 58px;
+            z-index: 15;
+        }
+        .page-wrap {
+            position: relative;
+            z-index: 1;
+            padding: 20px 40px 60px;
+        }
+        .summary-strip {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .summary-panel {
+            border-radius: 18px;
+            border: 1px solid rgba(52,211,153,0.18);
+            background: rgba(16,40,31,0.62);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+            padding: 14px 15px;
+        }
+        .summary-label {
+            font-size: 11px;
+            color: rgba(165,180,252,0.72);
+            font-family: var(--font-ui);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .summary-value {
+            margin-top: 7px;
+            font-size: 28px;
+            line-height: 1;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            color: var(--text-main);
+        }
+        .summary-note {
+            margin-top: 7px;
+            font-size: 11px;
+            line-height: 1.5;
+            color: rgba(199,210,254,0.7);
+        }
+        .summary-heat {
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 6px;
+            align-items: end;
+            height: 34px;
+        }
+        .heat-cell {
+            position: relative;
+            height: 100%;
+            border-radius: 7px;
+            border: 1px solid rgba(52,211,153,0.2);
+            background: rgba(10,24,18,0.26);
+            overflow: hidden;
+        }
+        .heat-cell::after {
+            content: "";
+            position: absolute;
+            inset: auto 0 0;
+            height: calc(var(--heat-level, 0) * 100%);
+            min-height: calc(var(--heat-level, 0) * 6px);
+            background: linear-gradient(180deg, rgba(167,243,208,0.78), rgba(52,211,153,0.92));
+            box-shadow: 0 0 10px rgba(52,211,153,0.4);
+            opacity: calc(0.2 + var(--heat-level, 0) * 0.8);
+        }
+        .heat-cell-label {
+            margin-top: 4px;
+            text-align: center;
+            font-size: 9px;
+            font-family: var(--font-ui);
+            color: rgba(165,180,252,0.62);
+            letter-spacing: 0.06em;
+        }
+        .timeline {
+            display: grid;
+            gap: 18px;
+        }
+        .timeline-group {
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--done-panel-border);
+            background: var(--done-panel);
+            box-shadow: 0 18px 44px rgba(0,0,0,0.22);
+            position: relative;
+            transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, filter 0.22s ease;
+        }
+        .timeline-group::before {
+            content: "";
+            position: absolute;
+            left: 16px;
+            top: 46px;
+            bottom: 14px;
+            width: 2px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.05), var(--timeline-accent, var(--done-accent)) 22%, rgba(255,255,255,0.06) 100%);
+            box-shadow: 0 0 12px rgba(52,211,153,0.45);
+            opacity: 0.42;
+            pointer-events: none;
+        }
+        .timeline-group[data-group-key="recent"]::before {
+            box-shadow: 0 0 12px rgba(129,140,248,0.42);
+        }
+        .timeline-group[data-group-key="older"]::before {
+            box-shadow: 0 0 12px rgba(245,158,11,0.42);
+        }
+        .timeline-group::after {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(circle at 12% 0%, rgba(255,255,255,0.12), transparent 52%);
+            transition: opacity 0.22s ease;
+        }
+        .timeline-group[data-group-key="today"] { --timeline-accent: #34d399; }
+        .timeline-group[data-group-key="recent"] { --timeline-accent: #818cf8; }
+        .timeline-group[data-group-key="older"] { --timeline-accent: #f59e0b; }
+        .timeline-group.is-active {
+            transform: translateY(-2px);
+            border-color: rgba(255,255,255,0.12);
+            box-shadow: 0 24px 56px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.05);
+            filter: saturate(1.1);
+        }
+        .timeline-group.is-active::after {
+            opacity: 1;
+        }
+        .timeline-group.is-active::before {
+            opacity: 0.78;
+        }
+        .timeline-head {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(52,211,153,0.18);
+            background: var(--done-panel-head);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            transition: background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .timeline-head::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(110deg, transparent 0%, rgba(125,211,252,0.16) 34%, transparent 56%);
+            background-size: 220% 100%;
+            animation: timelineHeadSweep 2.8s linear infinite;
+            opacity: 0.28;
+        }
+        .timeline-group.is-active .timeline-head {
+            background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent), var(--done-panel-head);
+            border-color: rgba(255,255,255,0.16);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        .timeline-head-left { display: flex; align-items: center; gap: 10px; }
+        .timeline-head-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .timeline-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--timeline-accent, var(--done-accent));
+            box-shadow: 0 0 12px rgba(52,211,153,0.8);
+            position: relative;
+            animation: timelineDotPulse 2.4s ease-in-out infinite;
+        }
+        .timeline-dot::after {
+            content: "";
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid rgba(52,211,153,0.56);
+            opacity: 0.34;
+            animation: timelineDotRing 2.4s ease-out infinite;
+        }
+        .timeline-group[data-group-key="recent"] .timeline-dot::after {
+            border-color: rgba(129,140,248,0.56);
+        }
+        .timeline-group[data-group-key="older"] .timeline-dot::after {
+            border-color: rgba(245,158,11,0.58);
+        }
+        .timeline-group[data-group-key="recent"] .timeline-dot {
+            box-shadow: 0 0 12px rgba(129,140,248,0.78);
+        }
+        .timeline-group[data-group-key="older"] .timeline-dot {
+            box-shadow: 0 0 12px rgba(245,158,11,0.75);
+        }
+        .timeline-title {
+            font-size: 12px;
+            font-weight: 800;
+            font-family: var(--font-ui);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--done-soft);
+        }
+        .timeline-count {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 99px;
+            color: var(--timeline-accent, var(--done-accent));
+            background: rgba(52,211,153,0.12);
+        }
+        .timeline-group[data-group-key="recent"] .timeline-count {
+            background: rgba(129,140,248,0.12);
+        }
+        .timeline-group[data-group-key="older"] .timeline-count {
+            background: rgba(245,158,11,0.14);
+        }
+        .timeline-toggle {
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(8,12,32,0.44);
+            color: rgba(226,232,240,0.82);
+            border-radius: 0;
+            clip-path: polygon(8% 0, 92% 0, 100% 50%, 92% 100%, 8% 100%, 0 50%);
+            padding: 5px 10px;
+            font-size: 11px;
+            line-height: 1;
+            font-family: var(--font-ui);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .timeline-toggle:hover {
+            border-color: rgba(255,255,255,0.14);
+            background: rgba(12,18,42,0.68);
+            color: #fff;
+            box-shadow: 0 0 18px rgba(129,140,248,0.24);
+        }
+        .timeline-toggle.is-open {
+            border-color: rgba(52,211,153,0.3);
+            background: rgba(10,34,25,0.56);
+            color: rgba(167,243,208,0.96);
+        }
+        .timeline-body {
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .timeline-group.is-collapsed .timeline-head {
+            border-bottom-color: transparent;
+        }
+        .timeline-group.is-collapsed .timeline-body {
+            display: none;
+        }
+        .timeline-group.is-collapsed::before {
+            opacity: 0.18;
+        }
+        .timeline-empty {
+            text-align: center;
+            padding: 24px 14px;
+            border: 1px dashed rgba(52,211,153,0.14);
+            border-radius: 12px;
+            color: rgba(110,231,183,0.58);
+            background: rgba(10,24,18,0.18);
+            font-size: 13px;
+        }
+        .card-stripe { height: 3px; }
+        .card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .card-title {
+            margin-bottom: 0;
+        }
+        .card-desc {
+            margin-top: 10px;
+            font-size: 13px;
+            color: rgba(30,27,46,0.72);
+            line-height: 1.7;
+        }
+        .card-desc.card-remarks {
+            margin-top: 8px;
+            font-size: 12px;
+            color: rgba(5, 80, 55, 0.78);
+            border-left: 3px solid rgba(45, 212, 191, 0.55);
+            padding-left: 10px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .card-meta {
+            margin-top: 10px;
+        }
+        .card-bottom {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .card-date {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        @media (max-width: 920px) {
+            .summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 768px) {
+            .topbar { padding-top: 12px; padding-bottom: 12px; }
+            .filterbar { padding-top: 12px; padding-bottom: 12px; }
+            .topbar { min-height: auto; align-items: flex-start; }
+            .filterbar { top: 84px; }
+            .page-wrap { padding: 16px; }
+        }
+        @media (max-width: 560px) {
+            .summary-strip { grid-template-columns: 1fr; }
+            .card-top, .card-bottom { flex-direction: column; align-items: flex-start; }
+            .filter-count { width: 100%; margin-left: 0; }
+            .timeline-head { align-items: flex-start; }
+            .timeline-head-right { width: 100%; justify-content: space-between; }
+            .timeline-group::before { left: 12px; }
+        }
+        @keyframes timelineDotPulse {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.14); filter: brightness(1.18); }
+        }
+        @keyframes timelineDotRing {
+            0% { opacity: 0.42; transform: scale(0.76); }
+            100% { opacity: 0; transform: scale(1.42); }
+        }
+        @keyframes timelineHeadSweep {
+            0% { background-position: 120% 0; }
+            100% { background-position: -40% 0; }
+        }
+    </style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<div class="topbar">
+    <div class="topbar-brand">
+        <div class="brand-icon"><span class="brand-icon-ring outer"></span><span class="brand-icon-ring mid"></span><span class="brand-icon-core"></span><span class="brand-icon-node n1"></span><span class="brand-icon-node n2"></span><span class="brand-icon-node n3"></span></div>
+        <div class="topbar-copy">
+            <span class="topbar-kicker">Archive Sector</span>
+            <h1>归档星域</h1>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="stats">
+            <span class="stat">星图总量 <strong id="stat-total">0</strong></span>
+            <span class="stat">今日归档 <strong id="stat-today">0</strong></span>
+            <span class="stat">当前映射 <strong id="stat-filtered">0</strong></span>
+        </div>
+        <a class="btn btn-ghost" href="/">返回指挥星域</a>
+    </div>
+</div>
+
+<div class="filterbar">
+    <div class="filter-group">
+        <span class="filter-label">搜索</span>
+        <input class="filter-input" id="q-keyword" placeholder="搜索标题、详情、来源" oninput="renderTimeline()">
+    </div>
+    <div class="filter-group">
+        <span class="filter-label">归档时间</span>
+        <input class="filter-input" type="date" id="q-from" onchange="renderTimeline()">
+        <span class="filter-sep">—</span>
+        <input class="filter-input" type="date" id="q-to" onchange="renderTimeline()">
+    </div>
+    <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="clearFilters()">清除</button>
+    <span class="filter-count" id="filter-count"></span>
+    <div class="filter-chips" id="filter-chips"></div>
+</div>
+
+<div class="page-wrap">
+    <div class="summary-strip">
+        <section class="summary-panel">
+            <div class="summary-label">今日归档</div>
+            <div class="summary-value" id="sum-today">0</div>
+            <div class="summary-note">当天闭环的任务会优先映射到第一组归档轨迹中。</div>
+        </section>
+        <section class="summary-panel">
+            <div class="summary-label">近域归档</div>
+            <div class="summary-value" id="sum-week">0</div>
+            <div class="summary-note">保留近期归档节奏，适合周度回顾与复盘。</div>
+        </section>
+        <section class="summary-panel">
+            <div class="summary-label">深域归档</div>
+            <div class="summary-value" id="sum-older">0</div>
+            <div class="summary-note">更早沉淀统一收纳进深域，不再继续拉长主指挥星域。</div>
+        </section>
+        <section class="summary-panel">
+            <div class="summary-label">最新归档</div>
+            <div class="summary-value" id="sum-latest">--</div>
+            <div class="summary-note" id="sum-latest-note">暂无归档任务。</div>
+            <div class="summary-note">近7日归档热力</div>
+            <div class="summary-heat" id="sum-heatmap"></div>
+        </section>
+    </div>
+
+    <div class="timeline" id="timeline"></div>
+    <div class="toast" id="toast"></div>
+</div>
+
+<script>
+var API = '/api/tasks';
+var allDoneTasks = [];
+var groupOpenState = { today: true, recent: false, older: false };
+
+function toast(msg, err) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (err ? ' error' : '');
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 2400);
+}
+
+function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function dateOnly(iso) {
+    return iso ? iso.substring(0, 10) : '';
+}
+
+function fmtDate(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日';
+}
+
+function fmtDateTime(iso) {
+    if (!iso) return '未知';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') +
+        ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+function taskStamp(task) {
+    return Date.parse(task.updated_at || task.created_at || '') || 0;
+}
+
+function daysAgo(iso) {
+    var stamp = Date.parse(dateOnly(iso));
+    var now = Date.parse(dateOnly(new Date().toISOString()));
+    if (!stamp || !now) return 9999;
+    return Math.floor((now - stamp) / 86400000);
+}
+
+function groupKey(task) {
+    var diff = daysAgo(task.updated_at || task.created_at);
+    if (diff <= 0) return 'today';
+    if (diff <= 6) return 'recent';
+    return 'older';
+}
+
+function groupTitle(key) {
+    if (key === 'today') return '今日归档';
+    if (key === 'recent') return '近域归档';
+    return '深域归档';
+}
+
+function groupEmptyText(key) {
+    if (key === 'today') return '今日尚无新的归档记录。';
+    if (key === 'recent') return '近域暂时没有其他归档任务。';
+    return '深域中暂无更早归档任务。';
+}
+
+function priorityLabel(priority) {
+    return { low: '低', medium: '中', high: '高' }[priority] || priority;
+}
+
+function priorityBadge(priority) {
+    var level = priority || 'medium';
+    return '<span class="badge badge-priority-' + esc(level) + '">优先级 ' + esc(priorityLabel(level)) + '</span>';
+}
+
+function isGroupOpen(key) {
+    return groupOpenState[key] !== false;
+}
+
+function toggleGroup(key) {
+    groupOpenState[key] = !isGroupOpen(key);
+    renderTimeline();
+}
+
+function loadDoneTasks() {
+    var x = new XMLHttpRequest();
+    x.open('GET', API, true);
+    x.onload = function() {
+        if (x.status !== 200) {
+            toast('加载归档星图失败', true);
+            return;
+        }
+        var tasks = JSON.parse(x.responseText);
+        allDoneTasks = tasks.filter(function(t) { return t.status === 'done'; }).sort(function(a, b) {
+            return taskStamp(b) - taskStamp(a);
+        });
+        updateSummary(allDoneTasks);
+        renderTimeline();
+    };
+    x.onerror = function() { toast('加载归档星图失败', true); };
+    x.send();
+}
+
+function updateSummary(items) {
+    var counts = { today: 0, recent: 0, older: 0 };
+    items.forEach(function(task) { counts[groupKey(task)] += 1; });
+    document.getElementById('stat-total').textContent = items.length;
+    document.getElementById('stat-today').textContent = counts.today;
+    document.getElementById('sum-today').textContent = counts.today;
+    document.getElementById('sum-week').textContent = counts.recent;
+    document.getElementById('sum-older').textContent = counts.older;
+    if (items.length) {
+        document.getElementById('sum-latest').textContent = fmtDate(items[0].updated_at || items[0].created_at);
+        document.getElementById('sum-latest-note').textContent = items[0].title;
+    } else {
+        document.getElementById('sum-latest').textContent = '--';
+        document.getElementById('sum-latest-note').textContent = '暂无归档任务。';
+    }
+    renderHeatmap(items);
+}
+
+function renderHeatmap(items) {
+    var now = new Date();
+    now.setHours(0, 0, 0, 0);
+    var keys = [];
+    var countMap = {};
+    for (var i = 6; i >= 0; i--) {
+        var d = new Date(now);
+        d.setDate(now.getDate() - i);
+        var key = d.toISOString().slice(0, 10);
+        keys.push(key);
+        countMap[key] = 0;
+    }
+    items.forEach(function(task) {
+        var k = dateOnly(task.updated_at || task.created_at);
+        if (Object.prototype.hasOwnProperty.call(countMap, k)) countMap[k] += 1;
+    });
+    var max = 0;
+    keys.forEach(function(k) { if (countMap[k] > max) max = countMap[k]; });
+    var html = keys.map(function(k) {
+        var value = countMap[k];
+        var level = max ? (value / max) : 0;
+        var label = k.slice(5).replace('-', '/');
+        return '<div>' +
+            '<div class="heat-cell" style="--heat-level:' + level.toFixed(3) + '" title="' + label + ' · ' + value + '项"></div>' +
+            '<div class="heat-cell-label">' + label + '</div>' +
+        '</div>';
+    }).join('');
+    document.getElementById('sum-heatmap').innerHTML = html;
+}
+
+function filteredDoneTasks() {
+    var keyword = document.getElementById('q-keyword').value.trim().toLowerCase();
+    var from = document.getElementById('q-from').value;
+    var to = document.getElementById('q-to').value;
+    return allDoneTasks.filter(function(t) {
+        var completed = dateOnly(t.updated_at || t.created_at);
+        var hay = [t.title, t.description, t.source, t.remarks || ''].join(' ').toLowerCase();
+        if (keyword && hay.indexOf(keyword) === -1) return false;
+        if (from && completed < from) return false;
+        if (to && completed > to) return false;
+        return true;
+    });
+}
+
+function renderCompletedFilterChips() {
+    var keyword = document.getElementById('q-keyword').value.trim();
+    var from = document.getElementById('q-from').value;
+    var to = document.getElementById('q-to').value;
+    var chips = [];
+    if (keyword) chips.push({ label: '关键词：' + keyword, key: 'q-keyword' });
+    if (from) chips.push({ label: '归档 >= ' + from, key: 'q-from' });
+    if (to) chips.push({ label: '归档 <= ' + to, key: 'q-to' });
+    document.getElementById('filter-chips').innerHTML = chips.map(function(chip) {
+        return '<span class="filter-chip">' + esc(chip.label) + '<button onclick="clearCompletedFilter(\'' + chip.key + '\')">✕</button></span>';
+    }).join('');
+}
+
+function clearCompletedFilter(id) {
+    document.getElementById(id).value = '';
+    renderTimeline();
+}
+
+function syncCompletedFilterGroupState() {
+    Array.prototype.forEach.call(document.querySelectorAll('.filterbar .filter-group'), function(group) {
+        var hasValue = false;
+        Array.prototype.forEach.call(group.querySelectorAll('.filter-input'), function(input) {
+            if (input.value && input.value.trim() !== '') hasValue = true;
+        });
+        group.classList.toggle('is-active', hasValue);
+    });
+}
+
+function renderCard(task) {
+    var priority = task.priority || 'medium';
+    var badges = ['<span class="badge badge-done">已归档</span>', priorityBadge(priority)];
+    if (task.due_date) badges.push('<span class="badge badge-due">📅 ' + esc(task.due_date) + '</span>');
+    if (task.source) badges.push('<span class="badge badge-source">💬 ' + esc(task.source) + '</span>');
+    if (task.automation && task.automation.state && task.automation.state.indexOf('reactivated') !== -1) {
+        badges.push('<span class="badge badge-reactivated">↺ 已重激活</span>');
+    }
+    return '<article class="card tilt-card priority-' + priority + '">' +
+        '<div class="card-stripe ' + priority + '"></div>' +
+        '<div class="card-body">' +
+            '<div class="card-top">' +
+                '<div class="card-title">' + esc(task.title) + '</div>' +
+                '<button class="btn btn-reopen" style="font-size:12px;padding:6px 10px" onclick="reopenTask(' + task.id + ')">重新激活</button>' +
+            '</div>' +
+            (task.description ? '<div class="card-desc">' + esc(task.description) + '</div>' : '') +
+            (task.remarks && String(task.remarks).trim() ? '<div class="card-desc card-remarks">' + esc(String(task.remarks).trim()) + '</div>' : '') +
+            '<div class="card-meta">' + badges.join('') + '</div>' +
+            '<div class="card-bottom">' +
+                '<span class="card-date"><span>归档时间</span><strong>' + esc(fmtDateTime(task.updated_at || task.created_at)) + '</strong></span>' +
+                '<span class="card-date"><span>创建时间</span><strong>' + esc(fmtDate(task.created_at)) + '</strong></span>' +
+            '</div>' +
+        '</div>' +
+    '</article>';
+}
+
+function renderGroup(key, items) {
+    var isOpen = isGroupOpen(key);
+    return '<section class="timeline-group' + (isOpen ? '' : ' is-collapsed') + '" data-group-key="' + key + '">' +
+        '<div class="timeline-head">' +
+            '<div class="timeline-head-left"><div class="timeline-dot"></div><span class="timeline-title">' + groupTitle(key) + '</span></div>' +
+            '<div class="timeline-head-right">' +
+                '<span class="timeline-count">' + items.length + '</span>' +
+                '<button class="timeline-toggle ' + (isOpen ? 'is-open' : '') + '" type="button" onclick="toggleGroup(\'' + key + '\')">' + (isOpen ? '收起 ◢' : '展开 ◣') + '</button>' +
+            '</div>' +
+        '</div>' +
+        '<div class="timeline-body">' +
+            (items.length ? items.map(renderCard).join('') : '<div class="timeline-empty">' + groupEmptyText(key) + '</div>') +
+        '</div>' +
+    '</section>';
+}
+
+function renderTimeline() {
+    var items = filteredDoneTasks();
+    var groups = { today: [], recent: [], older: [] };
+    items.forEach(function(task) { groups[groupKey(task)].push(task); });
+    syncCompletedFilterGroupState();
+    document.getElementById('stat-filtered').textContent = items.length;
+    document.getElementById('filter-count').textContent = items.length < allDoneTasks.length
+        ? items.length + ' / ' + allDoneTasks.length + ' 项'
+        : '';
+    renderCompletedFilterChips();
+    document.getElementById('timeline').innerHTML = items.length
+        ? ['today', 'recent', 'older'].map(function(key) { return renderGroup(key, groups[key]); }).join('')
+        : '<div class="empty">当前没有匹配的归档任务，试试调整关键词或归档时间范围。</div>';
+    if (window.completedSceneFx) {
+        window.completedSceneFx.bindCardTilt(document.getElementById('timeline'));
+        window.completedSceneFx.bindTimelineGlow();
+    }
+}
+
+function clearFilters() {
+    document.getElementById('q-keyword').value = '';
+    document.getElementById('q-from').value = '';
+    document.getElementById('q-to').value = '';
+    syncCompletedFilterGroupState();
+    renderTimeline();
+}
+
+function reopenTask(id) {
+    var x = new XMLHttpRequest();
+    x.open('PUT', API + '/' + id, true);
+    x.setRequestHeader('Content-Type', 'application/json');
+    x.onload = function() {
+        if (x.status === 200) {
+            toast('任务已重新激活');
+            loadDoneTasks();
+        } else {
+            toast('重新激活失败', true);
+        }
+    };
+    x.onerror = function() { toast('重新激活失败', true); };
+    x.send(JSON.stringify({ status: 'pending' }));
+}
+
+// ── Three.js 背景 ──
+(function() {
+    var canvas = document.getElementById('bg-canvas');
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0, 0);
+
+    var scene = new THREE.Scene();
+    var cam = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    cam.position.z = 50;
+
+    var circleCanvas = document.createElement('canvas');
+    circleCanvas.width = 32; circleCanvas.height = 32;
+    var ctx = circleCanvas.getContext('2d');
+    var grad = ctx.createRadialGradient(16,16,0,16,16,16);
+    grad.addColorStop(0,'rgba(255,255,255,1)');
+    grad.addColorStop(0.4,'rgba(255,255,255,0.8)');
+    grad.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,32,32);
+    var circleTex = new THREE.CanvasTexture(circleCanvas);
+
+    function lerp(a, b, t) {
+        return a + (b - a) * t;
+    }
+
+    var supportsHover = window.matchMedia('(hover: hover)').matches &&
+        !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function bindCardTilt(root) {
+        if (!supportsHover || !root || !root.querySelectorAll) return;
+        Array.prototype.forEach.call(root.querySelectorAll('.tilt-card'), function(card) {
+            if (card.dataset.tiltBound === '1') return;
+            card.dataset.tiltBound = '1';
+            card.addEventListener('mousemove', function(e) {
+                var rect = card.getBoundingClientRect();
+                var px = (e.clientX - rect.left) / rect.width;
+                var py = (e.clientY - rect.top) / rect.height;
+                var tiltY = (px - 0.5) * 8;
+                var tiltX = (0.5 - py) * 7;
+                card.style.setProperty('--card-tilt-x', tiltX.toFixed(2) + 'deg');
+                card.style.setProperty('--card-tilt-y', tiltY.toFixed(2) + 'deg');
+                card.style.setProperty('--card-glow-x', (px * 100).toFixed(1) + '%');
+                card.style.setProperty('--card-glow-y', (py * 100).toFixed(1) + '%');
+                card.style.setProperty('--card-glow-opacity', '1');
+            });
+            card.addEventListener('mouseleave', function() {
+                card.style.setProperty('--card-tilt-x', '0deg');
+                card.style.setProperty('--card-tilt-y', '0deg');
+                card.style.setProperty('--card-glow-opacity', '0');
+            });
+        });
+    }
+
+    var starGeo = new THREE.BufferGeometry();
+    var N = 2400;
+    var pos = new Float32Array(N * 3);
+    var col = new Float32Array(N * 3);
+    var sc = [0xffffff, 0xd4e5ff, 0xffd4a3, 0xfffde4, 0xcce5ff];
+    for (var i = 0; i < N; i++) {
+        pos[i*3] = (Math.random()-0.5)*600;
+        pos[i*3+1] = (Math.random()-0.5)*600;
+        pos[i*3+2] = (Math.random()-0.5)*400;
+        var c = new THREE.Color(sc[Math.floor(Math.random()*sc.length)]);
+        col[i*3] = c.r; col[i*3+1] = c.g; col[i*3+2] = c.b;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    starGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    var starMat = new THREE.PointsMaterial({ size: 0.8, vertexColors: true, transparent: true, opacity: 0.85, map: circleTex });
+    scene.add(new THREE.Points(starGeo, starMat));
+
+    function galaxy(count, spread, hex, op) {
+        var g = new THREE.BufferGeometry(), p2 = new Float32Array(count*3);
+        for (var i = 0; i < count; i++) {
+            var th = Math.random()*Math.PI*2, r = Math.random()*spread;
+            p2[i*3] = Math.cos(th)*r*2;
+            p2[i*3+1] = (Math.random()-0.5)*spread*0.15;
+            p2[i*3+2] = Math.sin(th)*r;
+        }
+        g.setAttribute('position', new THREE.BufferAttribute(p2, 3));
+        var mat = new THREE.PointsMaterial({ size: 0.4, color: hex, transparent: true, opacity: op, map: circleTex });
+        var points = new THREE.Points(g, mat);
+        points.userData.baseOpacity = op;
+        return points;
+    }
+    var galaxies = {
+        today: galaxy(1500, 66, 0x34d399, 0.22),
+        recent: galaxy(1850, 80, 0x6366f1, 0.36),
+        older: galaxy(1500, 74, 0xf59e0b, 0.18)
+    };
+    galaxies.today.position.set(104, -26, -82); scene.add(galaxies.today);
+    galaxies.recent.position.set(-88, 20, -104); scene.add(galaxies.recent);
+    galaxies.older.position.set(18, 52, -124); scene.add(galaxies.older);
+
+    function orbitTrack(radius, spread, count, color, y, z, opacity, tiltX, tiltY) {
+        var geo = new THREE.BufferGeometry();
+        var trackPos = new Float32Array(count * 3);
+        for (var i = 0; i < count; i++) {
+            var angle = Math.random() * Math.PI * 2;
+            var localRadius = radius + (Math.random() - 0.5) * spread;
+            trackPos[i * 3] = Math.cos(angle) * localRadius;
+            trackPos[i * 3 + 1] = (Math.random() - 0.5) * spread * 0.35;
+            trackPos[i * 3 + 2] = Math.sin(angle) * localRadius * 0.38;
+        }
+        geo.setAttribute('position', new THREE.BufferAttribute(trackPos, 3));
+        var mat = new THREE.PointsMaterial({ size: 0.45, color: color, transparent: true, opacity: opacity, map: circleTex });
+        var ring = new THREE.Points(geo, mat);
+        ring.position.set(0, y, z);
+        ring.rotation.x = tiltX;
+        ring.rotation.y = tiltY;
+        ring.userData.baseOpacity = opacity;
+        scene.add(ring);
+        return ring;
+    }
+
+    var timelineTracks = {
+        today: orbitTrack(58, 12, 1100, 0x34d399, 18, -88, 0.05, 0.26, 0.12),
+        recent: orbitTrack(92, 14, 1250, 0x818cf8, -14, -116, 0.045, 0.36, -0.08),
+        older: orbitTrack(126, 18, 1380, 0xf59e0b, 4, -146, 0.04, 0.3, 0.2)
+    };
+
+    var sceneState = {
+        current: 'idle',
+        hoverTimeline: null,
+        visibleTimeline: null
+    };
+    var sceneMotion = {
+        today: 0,
+        recent: 0,
+        older: 0
+    };
+    var timelineObserver = null;
+    var timelineRatios = {};
+
+    function activeTimelineKey() {
+        return sceneState.hoverTimeline || sceneState.visibleTimeline;
+    }
+
+    function syncSceneState() {
+        var activeKey = activeTimelineKey();
+        sceneState.current = activeKey ? 'timeline-focus' : 'idle';
+        Array.prototype.forEach.call(document.querySelectorAll('.timeline-group[data-group-key]'), function(group) {
+            group.classList.toggle('is-active', group.getAttribute('data-group-key') === activeKey);
+        });
+    }
+
+    function setSceneMood(nextState) {
+        if (typeof nextState.hoverTimeline !== 'undefined') sceneState.hoverTimeline = nextState.hoverTimeline;
+        if (typeof nextState.visibleTimeline !== 'undefined') sceneState.visibleTimeline = nextState.visibleTimeline;
+        syncSceneState();
+    }
+
+    function resolveVisibleTimeline() {
+        var bestKey = null;
+        var bestRatio = 0;
+        Object.keys(timelineRatios).forEach(function(key) {
+            if (timelineRatios[key] > bestRatio) {
+                bestRatio = timelineRatios[key];
+                bestKey = key;
+            }
+        });
+        setSceneMood({ visibleTimeline: bestRatio >= 0.2 ? bestKey : null });
+    }
+
+    function bindTimelineGlow() {
+        var groups = document.querySelectorAll('.timeline-group[data-group-key]');
+        if (timelineObserver) timelineObserver.disconnect();
+        timelineRatios = {};
+
+        Array.prototype.forEach.call(groups, function(group) {
+            if (group.dataset.timelineBound !== '1') {
+                group.dataset.timelineBound = '1';
+                var key = group.getAttribute('data-group-key');
+                group.addEventListener('mouseenter', function() { setSceneMood({ hoverTimeline: key }); });
+                group.addEventListener('mouseleave', function() { setSceneMood({ hoverTimeline: null }); });
+            }
+        });
+
+        if (!groups.length) {
+            setSceneMood({ hoverTimeline: null, visibleTimeline: null });
+            return;
+        }
+
+        if ('IntersectionObserver' in window) {
+            timelineObserver = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    timelineRatios[entry.target.getAttribute('data-group-key')] = entry.isIntersecting ? entry.intersectionRatio : 0;
+                });
+                resolveVisibleTimeline();
+            }, { threshold: [0.15, 0.25, 0.4, 0.6, 0.8] });
+
+            Array.prototype.forEach.call(groups, function(group) {
+                timelineObserver.observe(group);
+            });
+        } else {
+            setSceneMood({ visibleTimeline: groups[0].getAttribute('data-group-key') });
+        }
+    }
+
+    window.completedSceneFx = {
+        setSceneMood: setSceneMood,
+        bindTimelineGlow: bindTimelineGlow,
+        bindCardTilt: bindCardTilt
+    };
+
+    var mx = 0, my = 0;
+    document.addEventListener('mousemove', function(e) {
+        mx = (e.clientX / window.innerWidth - 0.5) * 2;
+        my = (e.clientY / window.innerHeight - 0.5) * 2;
+    });
+    window.addEventListener('resize', function() {
+        cam.aspect = window.innerWidth / window.innerHeight;
+        cam.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    (function animate() {
+        requestAnimationFrame(animate);
+        ['today', 'recent', 'older'].forEach(function(key) {
+            sceneMotion[key] = lerp(sceneMotion[key], activeTimelineKey() === key ? 1 : 0, 0.08);
+        });
+        cam.position.x += (mx * 8 - cam.position.x) * 0.03;
+        cam.position.y += (-my * 5 - cam.position.y) * 0.03;
+        cam.lookAt(scene.position);
+
+        var maxFocus = Math.max(sceneMotion.today, sceneMotion.recent, sceneMotion.older);
+        starMat.opacity = lerp(starMat.opacity, 0.82 + maxFocus * 0.06, 0.05);
+
+        galaxies.today.rotation.y += 0.00022 * (1 + sceneMotion.today * 0.65);
+        galaxies.recent.rotation.y += 0.00034 * (1 + sceneMotion.recent * 0.7);
+        galaxies.older.rotation.y -= 0.00018 * (1 + sceneMotion.older * 0.7);
+
+        ['today', 'recent', 'older'].forEach(function(key) {
+            var focus = sceneMotion[key];
+            var galaxyMesh = galaxies[key];
+            var track = timelineTracks[key];
+            galaxyMesh.material.opacity = lerp(galaxyMesh.material.opacity, galaxyMesh.userData.baseOpacity + focus * 0.18, 0.08);
+            var galaxyScale = 1 + focus * 0.1;
+            galaxyMesh.scale.x = lerp(galaxyMesh.scale.x, galaxyScale, 0.08);
+            galaxyMesh.scale.y = lerp(galaxyMesh.scale.y, galaxyScale, 0.08);
+            galaxyMesh.scale.z = lerp(galaxyMesh.scale.z, galaxyScale, 0.08);
+
+            track.material.opacity = lerp(track.material.opacity, track.userData.baseOpacity + focus * 0.14, 0.08);
+            var trackScale = 1 + focus * 0.08;
+            track.scale.x = lerp(track.scale.x, trackScale, 0.08);
+            track.scale.y = lerp(track.scale.y, trackScale, 0.08);
+            track.rotation.z += 0.00045 + focus * 0.00065;
+        });
+        renderer.render(scene, cam);
+    })();
+})();
+
+loadDoneTasks();
+</script>
+</body>
+</html>
