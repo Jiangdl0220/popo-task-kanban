@@ -72,7 +72,10 @@ def init_db():
     db.close()
 
 def migrate_from_json():
-    json_file = os.path.join(BASE_DIR, 'tasks.json')
+    # 优先从 DATA_DIR 读取，其次从 BASE_DIR
+    json_file = os.path.join(DATA_DIR, 'tasks.json')
+    if not os.path.exists(json_file):
+        json_file = os.path.join(BASE_DIR, 'tasks.json')
     if not os.path.exists(json_file):
         return
     try:
